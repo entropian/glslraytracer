@@ -33,25 +33,20 @@ const char* basicFragSrc = GLSL(
     uniform light uLight2;
     
     struct material{
-        /*
-          Like the matte material from the book. Dropped the coefficients to simplify things for now,
-          which means the brightness of the color cannot be easily changed          
-         */
-        float ka;
-        float kd;
-        float ks;
-        float kt;
-        vec3 color;
-        bool reflective;
-        int matType;
-        float ior;
+        float ka;                // Ambient coefficient
+        float kd;                // Diffuse coefficient
+        float ks;                // Specular coefficient
+        float kt;                // Transmission coefficient
+        vec3 color;              
+        int matType;             // Material type: 0 = Opaque non-reflective, 1 = reflective, 2 = transmissive
+        float ior;               // Index of refraction
     };
 
     struct plane{
-        vec3 point;
-        vec3 normal;
+        vec3 point;              // A point that's on the plane
+        vec3 normal;             // A unit vector that's perpendicular to the plane
         material mat;
-        bool checkered;        
+        bool checkered;          // Flag for checker pattern
     };
     uniform plane uPlane1;
     uniform plane uPlane2;
@@ -69,8 +64,9 @@ const char* basicFragSrc = GLSL(
     uniform sphere uSphere2;
     uniform sphere uSphere3;
 
+    // Struct for ray-object intersection
     struct shadeRec{
-        vec3 normal;
+        vec3 normal;                
         float t;
         material mat;
     };
@@ -106,7 +102,7 @@ const char* basicFragSrc = GLSL(
 
         return ret;
     }
-
+    
     shadeRec sphereIntersect(sphere s, ray r)
     {        
         shadeRec ret;
@@ -158,7 +154,6 @@ const char* basicFragSrc = GLSL(
         shadeRec ret;
         ret.t = MAX_DEPTH;
         ret.normal = vec3(0, 0, 0);
-        //ret.color = vec3(0, 0, 0);
         ret.mat.kd = 0;
         ret.mat.ka = 0;
         ret.mat.ks = 0;
@@ -303,6 +298,7 @@ const char* basicFragSrc = GLSL(
         return false;        
     }
 
+    // Calculates the direct illumination component of a ray-object intersection
     vec3 directIllum(shadeRec sr, ray r)
     {
         vec3 L = sr.mat.ka * sr.mat.color;
@@ -334,6 +330,7 @@ const char* basicFragSrc = GLSL(
         return L;
     }
 
+    // Tests for total internal reflection 
     bool tir(shadeRec sr, ray r)
     {
         float cos_thetai = dot(sr.normal, -r.direction);
@@ -345,7 +342,7 @@ const char* basicFragSrc = GLSL(
         return (1.0 - (1.0 - cos_thetai * cos_thetai) / (eta * eta) < 0.0);
     }
 
-
+    // Returns the direction of a ray that crosses from one medium to another
     vec3 calcRefractedDirection(shadeRec sr, ray r)
     {
         vec3 n = sr.normal;
@@ -366,6 +363,7 @@ const char* basicFragSrc = GLSL(
         return wt;
     }
 
+    // Calculates the color of a pixel given that the primary ray hits an object in the scene
     vec3 shade(shadeRec sr, ray r)
     {
         vec3 L = directIllum(sr, r);
@@ -383,7 +381,6 @@ const char* basicFragSrc = GLSL(
                 if(secondary_sr.t < MAX_DEPTH)
                 {
                     //vec3 fr = 0.5f * vec3(1, 1, 1) / dot(secondary_ray.direction, sr.normal);
-
                     //L += fr * directIllum(secondary_sr, secondary_ray) * dot(secondary_ray.direction, sr.normal);
                     L += fr * directIllum(secondary_sr, secondary_ray);
                 }else
@@ -423,18 +420,22 @@ const char* basicFragSrc = GLSL(
         ray r;
         //float z = sphereIntersect(gl_FragCoord.x / 800.0 / .75 - (0.5 / .75), gl_FragCoord.y / 600.0 - 0.5);
         //r.origin = vec3(gl_FragCoord.x / 1280.0 / 0.75 - (0.5 / .75), gl_FragCoord.y / 960.0 - 0.5, 0.0);
+
+        // Construct ray with the position of the camera and a point on the viewplane
         r.origin = vec3(0, 0, 2);
         r.direction = vec3(gl_FragCoord.x / 1280.0 / 0.75 - (0.5 / .75), gl_FragCoord.y / 960.0 - 0.5, 1.0) - r.origin;
 
+        // Check if the ray hits any of the objects in the scene
         shadeRec sr = intersectTest(r);
-
+        
         if(sr.t < MAX_DEPTH)
         {
+            // Ray hits an object
             vec3 color = shade(sr, r);
             outColor = vec4(color, 1.0f);            
         }else
+        {
             outColor = vec4(BACKGROUND_COLOR, 1.0f);
-
-                
+        }                
     }
 );

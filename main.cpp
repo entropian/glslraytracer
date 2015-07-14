@@ -99,6 +99,7 @@ void readAndCompileShaders(const char *vs, const char *fs, GLuint *shaderProgram
     glDeleteShader(fragmentShader);
 }
 
+// Specify the values of a light struct uniform in the fragment shader
 void setLight(GLuint shaderProgram, const char *lightName, Vec3 position, Vec3 color, float intensity)
 {
     char lightMember[30];
@@ -115,6 +116,7 @@ void setLight(GLuint shaderProgram, const char *lightName, Vec3 position, Vec3 c
     glUniform1f(glGetUniformLocation(shaderProgram, lightMember), intensity);
 }
 
+// Specify the values of a material struct in the fragment shader
 void setMaterial(GLuint shaderProgram, const char *objectName, Material mat)
 {
     char objMatMember[30];
@@ -147,6 +149,7 @@ void setMaterial(GLuint shaderProgram, const char *objectName, Material mat)
     glUniform1f(glGetUniformLocation(shaderProgram, objMatMember), mat.kt);    
 }
 
+// Specify the values of a plane struct in the fragment shader
 void setPlane(GLuint shaderProgram, const char *planeName, Vec3 point, Vec3 normal, Material mat, bool checkered)
 {
     char planeMember[30];
@@ -158,7 +161,6 @@ void setPlane(GLuint shaderProgram, const char *planeName, Vec3 point, Vec3 norm
     strcat(planeMember, ".normal");
     glUniform3f(glGetUniformLocation(shaderProgram, planeMember), normal[0], normal[1], normal[2]);
 
-
     strcpy(planeMember, planeName);
     strcat(planeMember, ".checkered");
     glUniform1i(glGetUniformLocation(shaderProgram, planeMember), checkered);
@@ -166,6 +168,7 @@ void setPlane(GLuint shaderProgram, const char *planeName, Vec3 point, Vec3 norm
     setMaterial(shaderProgram, planeName, mat);
 }
 
+// Specify the values of a sphere struct in the fragment shader
 void setSphere(GLuint shaderProgram, const char *sphereName, Vec3 point, float radius, Material mat)
 {
     char sphereMember[30];
@@ -180,8 +183,10 @@ void setSphere(GLuint shaderProgram, const char *sphereName, Vec3 point, float r
     setMaterial(shaderProgram, sphereName, mat);
 }
 
+// Sets up the scene
 void initScene()
 {
+    // Set the number of ray bounces
     glUniform1i(glGetUniformLocation(shaderProgram, "MAX_BOUNCE"), 4);
     
     //--------------------- Lights
@@ -360,6 +365,7 @@ int main()
         return -1;
     }
 
+    // Callback functions
     //glfwSetMouseButtonCallback(window, mouseButtonCallback);
     //glfwSetCursorPosCallback(window, cursorPosCallback);
     glfwSetKeyCallback(window, keyCallback);    
@@ -368,6 +374,7 @@ int main()
     readAndCompileShaders(basicVertSrc, basicFragSrc, &shaderProgram);
     glUseProgram(shaderProgram);
 
+    // The quad that covers the whole viewport
     GLfloat vertices[] = {
         -1.0f,  -1.0f,
         1.0f, -1.0f,
@@ -377,6 +384,7 @@ int main()
         1.0, 1.0
     };
 
+    // Generate and bind buffer objects
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
@@ -394,12 +402,12 @@ int main()
     initScene();
 
     Mat4 rotation = Mat4::makeYRotation(3);
-
     GLuint uSphere2Pos = glGetUniformLocation(shaderProgram, "uSphere2.center");
     double currentTime, timeLastRender = 0;
+
+    // Render loop
     while(!glfwWindowShouldClose(window))
     {
-        // Poll window events
         currentTime = glfwGetTime();
         if((currentTime - timeLastRender) >= g_timeBetweenFrames)
         {
@@ -408,7 +416,7 @@ int main()
             glUniform3f(uSphere2Pos, sphere2Pos[0], sphere2Pos[1], sphere2Pos[2]);
             draw_scene();
         }
+        // Poll window events
         glfwPollEvents();
-
     }
 }
